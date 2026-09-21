@@ -1,0 +1,2860 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Supermarket POS Fitts' Law Experiment</title>
+
+<style>
+  :root {
+    --bg: #eef2f4;
+    --panel: #ffffff;
+    --ink: #172126;
+    --muted: #64727a;
+    --line: #d8e0e4;
+    --accent: #0b7a5a;
+    --accent-dark: #075c44;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family:
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      "Noto Sans TC",
+      Arial,
+      sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+  }
+
+  .app {
+    width: 1160px;
+    margin: 24px auto 40px;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .title-group h1 {
+    margin: 0;
+    font-size: 24px;
+  }
+
+  .title-group p {
+    margin: 5px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .status-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .badge {
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid var(--line);
+    font-size: 13px;
+    color: #344047;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: 0 10px 26px rgba(34, 49, 58, 0.08);
+  }
+
+  #instructionScreen,
+  #summaryScreen {
+    padding: 30px 34px;
+  }
+
+  #instructionScreen h2,
+  #summaryScreen h2 {
+    margin: 0 0 12px;
+    font-size: 22px;
+  }
+
+  .instruction-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .instruction-box {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px;
+    background: #fafcfd;
+  }
+
+  .instruction-box ol {
+    margin: 8px 0 0 22px;
+    padding: 0;
+    line-height: 1.8;
+  }
+
+  .note {
+    margin-top: 12px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 7px;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #bcc9cf;
+    border-radius: 8px;
+    font: inherit;
+    outline: none;
+  }
+
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(11, 122, 90, 0.12);
+  }
+
+  .button-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+  }
+
+  button {
+    border: 0;
+    border-radius: 9px;
+    padding: 11px 16px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  button.primary {
+    color: #fff;
+    background: var(--accent);
+  }
+
+  button.primary:hover {
+    background: var(--accent-dark);
+  }
+
+  button.secondary {
+    color: #25343c;
+    background: #edf2f4;
+    border: 1px solid #d4dde1;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  #experimentScreen,
+  #summaryScreen {
+    display: none;
+  }
+
+  .pos-shell {
+    padding: 18px;
+  }
+
+  .pos-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .task-callout {
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    background: #f6faf8;
+    border: 1px solid #cfe3da;
+    border-radius: 10px;
+  }
+
+  .task-callout strong {
+    font-size: 18px;
+    color: #075c44;
+  }
+
+  .task-callout span {
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  .progress {
+    text-align: right;
+    min-width: 180px;
+  }
+
+  .progress .big {
+    font-size: 24px;
+    font-weight: 800;
+  }
+
+  .progress .small {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .canvas-wrap {
+    width: 1124px;
+    overflow: auto;
+    border-radius: 12px;
+    border: 1px solid #cfd8dd;
+    background: #dfe7ea;
+    padding: 11px;
+  }
+
+  /*
+    Canvas is deliberately NOT responsively scaled.
+    This keeps A and W consistent in CSS pixels during the experiment.
+  */
+  canvas {
+    display: block;
+    width: 1100px;
+    height: 650px;
+    background: #f8fafb;
+    border-radius: 8px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  .experiment-note {
+    margin-top: 10px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 18px 0 22px;
+  }
+
+  .metric {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    background: #fafcfd;
+  }
+
+  .metric .label {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .metric .value {
+    margin-top: 4px;
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th,
+  td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #e2e8eb;
+    text-align: right;
+  }
+
+  th:first-child,
+  td:first-child {
+    text-align: left;
+  }
+
+  th {
+    background: #f5f8f9;
+  }
+
+  .formula {
+    margin: 10px 0 20px;
+    padding: 12px 14px;
+    background: #f5f8f9;
+    border-radius: 8px;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 14px;
+  }
+
+  @media (max-width: 1180px) {
+    .app {
+      margin-left: 12px;
+      margin-right: 12px;
+    }
+  }
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="topbar">
+    <div class="title-group">
+      <h1>Supermarket POS Fitts' Law Experiment</h1>
+      <p>Checkout-operation task · controlled target distance and target width</p>
+    </div>
+
+    <div class="status-badges">
+      <div class="badge">ID = log₂(A / W + 1)</div>
+      <div class="badge">27 experimental trials</div>
+      <div class="badge">No backend</div>
+    </div>
+  </div>
+
+
+  <!-- ==========================================================
+       INSTRUCTION SCREEN
+       ========================================================== -->
+
+  <section id="instructionScreen" class="card">
+
+    <h2>實驗說明</h2>
+
+    <div class="instruction-grid">
+
+      <div class="instruction-box">
+
+        <strong>任務</strong>
+
+        <ol>
+          <li>你將扮演超市收銀員，使用滑鼠操作 POS 介面。</li>
+          <li>先點擊中央的「開始定位」按鈕。</li>
+          <li>之後每次只點擊畫面中<strong>發亮的圓形目標按鈕</strong>。</li>
+          <li>每次成功點擊後，下一個目標會立即出現。</li>
+          <li>請兼顧速度與準確度。點錯位置會記錄一次錯誤，但計時不中斷。</li>
+        </ol>
+
+        <div class="note">
+          建議使用滑鼠、瀏覽器縮放 100%，且實驗開始後不要調整視窗大小。
+          <br>
+          第一個「開始定位」目標不列入正式 trial。
+          正式 Movement Time 從下一個目標出現時開始計時。
+        </div>
+
+      </div>
+
+
+      <div class="instruction-box">
+
+        <label for="participantId">Participant ID（選填）</label>
+
+        <input
+          id="participantId"
+          type="text"
+          maxlength="40"
+          placeholder="例如 P01"
+          autocomplete="off"
+        />
+
+        <div class="note">
+          Experimental design:
+          <br>
+          3 個 A × 3 個 W × 3 次重複 = 27 trials。
+          <br><br>
+          每個 repetition block 內的 9 個 A×W 組合會隨機排列。
+        </div>
+
+        <div class="button-row">
+          <button id="startButton" class="primary">
+            Start Experiment
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ==========================================================
+       EXPERIMENT SCREEN
+       ========================================================== -->
+
+  <section id="experimentScreen" class="card pos-shell">
+
+    <div class="pos-header">
+
+      <div class="task-callout">
+        <strong id="nextActionText">請點擊：開始定位</strong>
+        <span id="hintText">
+          先建立第一個起點；此步驟不計時。
+        </span>
+      </div>
+
+      <div class="progress">
+        <div class="big">
+          <span id="trialNumber">0</span>
+          /
+          <span id="trialTotal">27</span>
+        </div>
+
+        <div class="small">
+          completed experimental trials
+        </div>
+      </div>
+
+    </div>
+
+
+    <div class="canvas-wrap">
+      <canvas
+        id="experimentCanvas"
+        width="1100"
+        height="650"
+        aria-label="Fitts Law checkout experiment area">
+      </canvas>
+    </div>
+
+    <div class="experiment-note">
+      A 與 W 均以固定尺寸 Canvas 的 CSS pixel 為單位。
+      正式實驗期間不向受試者顯示 A/W 數值，以避免提示條件難度。
+    </div>
+
+  </section>
+
+
+  <!-- ==========================================================
+       SUMMARY SCREEN
+       ========================================================== -->
+
+  <section id="summaryScreen" class="card">
+
+    <h2>Experiment Summary</h2>
+
+    <p id="summaryText"></p>
+
+
+    <div class="summary-grid">
+
+      <div class="metric">
+        <div class="label">Successful trials</div>
+        <div class="value" id="metricTrials">–</div>
+      </div>
+
+      <div class="metric">
+        <div class="label">Mean MT</div>
+        <div class="value" id="metricMT">–</div>
+      </div>
+
+      <div class="metric">
+        <div class="label">Total errors</div>
+        <div class="value" id="metricErrors">–</div>
+      </div>
+
+      <div class="metric">
+        <div class="label">Mean ID</div>
+        <div class="value" id="metricID">–</div>
+      </div>
+
+    </div>
+
+
+    <div
+      class="formula"
+      id="regressionFormula">
+      Regression: –
+    </div>
+
+
+    <h3>Condition means</h3>
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>Condition</th>
+          <th>A (px)</th>
+          <th>W (px)</th>
+          <th>ID (bits)</th>
+          <th>Mean MT (ms)</th>
+          <th>Errors</th>
+        </tr>
+      </thead>
+
+      <tbody id="conditionTableBody"></tbody>
+
+    </table>
+
+
+    <div class="button-row">
+
+      <button
+        id="downloadCsvButton"
+        class="primary">
+        Download CSV
+      </button>
+
+      <button
+        id="restartButton"
+        class="secondary">
+        Run Again
+      </button>
+
+    </div>
+
+  </section>
+
+</div>
+
+
+<script>
+(() => {
+
+  "use strict";
+
+
+  // ============================================================
+  // EXPERIMENTAL DESIGN
+  // ============================================================
+  //
+  // A = center-to-center distance from the previously selected
+  //     target to the next target.
+  //
+  // W = diameter of the circular target.
+  //
+  // Full factorial design:
+  //
+  //   A: 180, 320, 460 px
+  //   W:  44,  72, 108 px
+  //
+  //   3 A levels
+  //   ×
+  //   3 W levels
+  //   ×
+  //   3 repetitions
+  //   =
+  //   27 trials
+  //
+  // Shannon formulation:
+  //
+  // ID = log2(A / W + 1)
+  //
+  // ============================================================
+
+
+  const DISTANCE_LEVELS = [
+    180,
+    320,
+    460
+  ];
+
+
+  const WIDTH_LEVELS = [
+    44,
+    72,
+    108
+  ];
+
+
+  const REPETITIONS = 3;
+
+
+  const POS_ACTIONS = [
+    "下一步",
+    "會員 / 點數",
+    "優惠",
+    "取消",
+    "信用卡",
+    "電子支付",
+    "現金"
+  ];
+
+
+  // ============================================================
+  // CANVAS
+  // ============================================================
+
+  const canvas =
+    document.getElementById("experimentCanvas");
+
+  const ctx =
+    canvas.getContext("2d");
+
+
+  /*
+    Safe bounds are independent of W.
+
+    Largest target:
+        W = 108 px
+        radius = 54 px
+
+    Therefore target centers stay far enough away from
+    the canvas border that even the largest target remains
+    completely visible and clickable.
+  */
+
+  const SAFE_BOUNDS = {
+
+    left: 64,
+
+    right:
+      canvas.width - 64,
+
+    top: 90,
+
+    bottom: 490
+
+  };
+
+
+  const START_TARGET = {
+
+    x:
+      canvas.width / 2,
+
+    y:
+      290,
+
+    W:
+      92,
+
+    label:
+      "開始定位"
+
+  };
+
+
+  // ============================================================
+  // DOM REFERENCES
+  // ============================================================
+
+  const instructionScreen =
+    document.getElementById("instructionScreen");
+
+  const experimentScreen =
+    document.getElementById("experimentScreen");
+
+  const summaryScreen =
+    document.getElementById("summaryScreen");
+
+
+  const startButton =
+    document.getElementById("startButton");
+
+  const restartButton =
+    document.getElementById("restartButton");
+
+  const downloadCsvButton =
+    document.getElementById("downloadCsvButton");
+
+
+  const participantIdInput =
+    document.getElementById("participantId");
+
+
+  const nextActionText =
+    document.getElementById("nextActionText");
+
+  const hintText =
+    document.getElementById("hintText");
+
+  const trialNumberEl =
+    document.getElementById("trialNumber");
+
+  const trialTotalEl =
+    document.getElementById("trialTotal");
+
+
+  // ============================================================
+  // EXPERIMENT STATE
+  // ============================================================
+
+  let conditions = [];
+
+  let results = [];
+
+  let currentTrialIndex = -1;
+
+  let currentTarget = null;
+
+  let previousTarget = null;
+
+  let trialStartTime = null;
+
+  let currentErrors = 0;
+
+  let acceptingClicks = false;
+
+  let experimentRunning = false;
+
+  let participantId = "";
+
+
+  // ============================================================
+  // RANDOMIZATION
+  // ============================================================
+
+  function shuffle(array) {
+
+    const a =
+      array.slice();
+
+
+    for (
+      let i = a.length - 1;
+      i > 0;
+      i--
+    ) {
+
+      const j =
+        Math.floor(
+          Math.random() *
+          (i + 1)
+        );
+
+
+      [
+        a[i],
+        a[j]
+      ] =
+      [
+        a[j],
+        a[i]
+      ];
+
+    }
+
+
+    return a;
+
+  }
+
+
+  // ============================================================
+  // CREATE 27 CONTROLLED TRIAL CONDITIONS
+  // ============================================================
+
+  function generateConditions() {
+
+    const all = [];
+
+
+    for (
+      let rep = 1;
+      rep <= REPETITIONS;
+      rep++
+    ) {
+
+      const block = [];
+
+
+      for (
+        const A of DISTANCE_LEVELS
+      ) {
+
+        for (
+          const W of WIDTH_LEVELS
+        ) {
+
+          block.push({
+
+            A,
+
+            W,
+
+            repetition:
+              rep,
+
+            ID:
+              Math.log2(
+                A / W + 1
+              )
+
+          });
+
+        }
+
+      }
+
+
+      /*
+        Each repetition contains all 9 A×W conditions once.
+
+        Only trial ORDER is randomized.
+
+        A and W themselves are controlled values,
+        not random distances/sizes.
+      */
+
+      all.push(
+        ...shuffle(block)
+      );
+
+    }
+
+
+    return all.map(
+      (condition, index) => ({
+
+        ...condition,
+
+        plannedTrial:
+          index + 1,
+
+        action:
+          POS_ACTIONS[
+            index %
+            POS_ACTIONS.length
+          ]
+
+      })
+    );
+
+  }
+
+
+  // ============================================================
+  // TARGET POSITION
+  // ============================================================
+  //
+  // This is the critical Fitts' Law manipulation.
+  //
+  // The next target is physically placed:
+  //
+  //   x2 = x1 + A*cos(theta)
+  //   y2 = y1 + A*sin(theta)
+  //
+  // Therefore:
+  //
+  // sqrt((x2-x1)^2 + (y2-y1)^2) = A
+  //
+  // Direction is randomized, but DISTANCE is exact.
+  //
+  // ============================================================
+
+  function chooseTargetPosition(
+    previous,
+    A
+  ) {
+
+    /*
+      1440 possible directions
+      =
+      one direction every 0.25 degrees.
+
+      Directions are shuffled so movement direction
+      is not predictable.
+    */
+
+    const angles =
+      shuffle(
+
+        Array.from(
+          { length: 1440 },
+
+          (_, i) =>
+            (
+              i /
+              1440
+            ) *
+            Math.PI *
+            2
+        )
+
+      );
+
+
+    for (
+      const angle of angles
+    ) {
+
+      const x =
+        previous.x +
+        A *
+        Math.cos(angle);
+
+
+      const y =
+        previous.y +
+        A *
+        Math.sin(angle);
+
+
+      if (
+
+        x >= SAFE_BOUNDS.left &&
+
+        x <= SAFE_BOUNDS.right &&
+
+        y >= SAFE_BOUNDS.top &&
+
+        y <= SAFE_BOUNDS.bottom
+
+      ) {
+
+        return {
+
+          x,
+
+          y,
+
+          angle
+
+        };
+
+      }
+
+    }
+
+
+    throw new Error(
+      "No valid target position found for the requested distance."
+    );
+
+  }
+
+
+  // ============================================================
+  // CANVAS DRAWING HELPERS
+  // ============================================================
+
+  function drawRoundedRect(
+    x,
+    y,
+    w,
+    h,
+    radius,
+    fillStyle,
+    strokeStyle = null
+  ) {
+
+    const r =
+      Math.min(
+        radius,
+        w / 2,
+        h / 2
+      );
+
+
+    ctx.beginPath();
+
+    ctx.moveTo(
+      x + r,
+      y
+    );
+
+    ctx.arcTo(
+      x + w,
+      y,
+      x + w,
+      y + h,
+      r
+    );
+
+    ctx.arcTo(
+      x + w,
+      y + h,
+      x,
+      y + h,
+      r
+    );
+
+    ctx.arcTo(
+      x,
+      y + h,
+      x,
+      y,
+      r
+    );
+
+    ctx.arcTo(
+      x,
+      y,
+      x + w,
+      y,
+      r
+    );
+
+    ctx.closePath();
+
+
+    ctx.fillStyle =
+      fillStyle;
+
+    ctx.fill();
+
+
+    if (
+      strokeStyle
+    ) {
+
+      ctx.strokeStyle =
+        strokeStyle;
+
+      ctx.lineWidth =
+        1;
+
+      ctx.stroke();
+
+    }
+
+  }
+
+
+  // ============================================================
+  // DRAW SUPERMARKET POS INTERFACE
+  // ============================================================
+
+  function drawPosBackground() {
+
+    ctx.clearRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+
+    ctx.fillStyle =
+      "#edf2f4";
+
+    ctx.fillRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+
+    // ----------------------------------------------------------
+    // Top POS status bar
+    // ----------------------------------------------------------
+
+    drawRoundedRect(
+      18,
+      18,
+      1064,
+      54,
+      10,
+      "#17333b"
+    );
+
+
+    ctx.fillStyle =
+      "#eaf5f0";
+
+    ctx.font =
+      "700 18px system-ui, sans-serif";
+
+    ctx.textAlign =
+      "left";
+
+    ctx.textBaseline =
+      "middle";
+
+
+    ctx.fillText(
+      "收銀作業台 / Checkout POS",
+      36,
+      45
+    );
+
+
+    ctx.font =
+      "13px system-ui, sans-serif";
+
+    ctx.fillStyle =
+      "#a9c5bd";
+
+    ctx.textAlign =
+      "right";
+
+
+    ctx.fillText(
+      "交易狀態：待操作",
+      1062,
+      45
+    );
+
+
+    // ----------------------------------------------------------
+    // Receipt / checkout list
+    // ----------------------------------------------------------
+
+    drawRoundedRect(
+      22,
+      88,
+      240,
+      410,
+      12,
+      "#f8fbfc",
+      "#d3dde2"
+    );
+
+
+    ctx.fillStyle =
+      "#61747d";
+
+    ctx.font =
+      "700 14px system-ui, sans-serif";
+
+    ctx.textAlign =
+      "left";
+
+
+    ctx.fillText(
+      "購物明細",
+      40,
+      115
+    );
+
+
+    const items = [
+
+      [
+        "鮮奶",
+        "$89"
+      ],
+
+      [
+        "吐司",
+        "$45"
+      ],
+
+      [
+        "蔬菜",
+        "$72"
+      ],
+
+      [
+        "洗衣精",
+        "$129"
+      ],
+
+      [
+        "會員折抵",
+        "-$20"
+      ]
+
+    ];
+
+
+    let y =
+      150;
+
+
+    ctx.font =
+      "13px system-ui, sans-serif";
+
+
+    for (
+      const [
+        name,
+        price
+      ]
+      of items
+    ) {
+
+      ctx.fillStyle =
+        "#6c7b82";
+
+      ctx.textAlign =
+        "left";
+
+
+      ctx.fillText(
+        name,
+        40,
+        y
+      );
+
+
+      ctx.textAlign =
+        "right";
+
+
+      ctx.fillText(
+        price,
+        240,
+        y
+      );
+
+
+      ctx.strokeStyle =
+        "#e4eaed";
+
+      ctx.beginPath();
+
+      ctx.moveTo(
+        40,
+        y + 13
+      );
+
+      ctx.lineTo(
+        240,
+        y + 13
+      );
+
+      ctx.stroke();
+
+
+      y += 46;
+
+    }
+
+
+    ctx.fillStyle =
+      "#1d343c";
+
+    ctx.font =
+      "800 22px system-ui, sans-serif";
+
+    ctx.textAlign =
+      "left";
+
+
+    ctx.fillText(
+      "應收",
+      40,
+      445
+    );
+
+
+    ctx.textAlign =
+      "right";
+
+
+    ctx.fillText(
+      "$315",
+      240,
+      445
+    );
+
+
+    // ----------------------------------------------------------
+    // Main POS operation area
+    // ----------------------------------------------------------
+
+    drawRoundedRect(
+      280,
+      88,
+      798,
+      410,
+      12,
+      "#ffffff",
+      "#d3dde2"
+    );
+
+
+    ctx.fillStyle =
+      "#8a989e";
+
+    ctx.font =
+      "12px system-ui, sans-serif";
+
+    ctx.textAlign =
+      "left";
+
+
+    ctx.fillText(
+      "操作區 — 點擊發亮目標",
+      296,
+      111
+    );
+
+
+    // ----------------------------------------------------------
+    // Fixed checkout keys
+    // ----------------------------------------------------------
+
+    const keyY =
+      548;
+
+    const keyH =
+      76;
+
+    const gap =
+      10;
+
+    const left =
+      22;
+
+    const totalWidth =
+      1056;
+
+
+    const keyW =
+      (
+        totalWidth -
+        gap *
+        (
+          POS_ACTIONS.length - 1
+        )
+      ) /
+      POS_ACTIONS.length;
+
+
+    POS_ACTIONS.forEach(
+      (
+        label,
+        i
+      ) => {
+
+        const x =
+          left +
+          i *
+          (
+            keyW +
+            gap
+          );
+
+
+        drawRoundedRect(
+          x,
+          keyY,
+          keyW,
+          keyH,
+          10,
+          "#e3e9ec",
+          "#c6d0d5"
+        );
+
+
+        ctx.fillStyle =
+          "#52636b";
+
+        ctx.font =
+          "700 14px system-ui, sans-serif";
+
+        ctx.textAlign =
+          "center";
+
+        ctx.textBaseline =
+          "middle";
+
+
+        ctx.fillText(
+          label,
+          x +
+          keyW / 2,
+          keyY +
+          keyH / 2
+        );
+
+      }
+    );
+
+  }
+
+
+  // ============================================================
+  // DRAW ACTIVE TARGET
+  // ============================================================
+
+  function drawTarget(
+    target,
+    isStart = false
+  ) {
+
+    const radius =
+      target.W / 2;
+
+
+    // Glow
+
+    ctx.save();
+
+
+    ctx.shadowColor =
+      isStart
+        ? "rgba(11,122,90,.45)"
+        : "rgba(255,184,0,.75)";
+
+
+    ctx.shadowBlur =
+      isStart
+        ? 20
+        : 28;
+
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+      target.x,
+      target.y,
+      radius,
+      0,
+      Math.PI * 2
+    );
+
+
+    ctx.fillStyle =
+      isStart
+        ? "#0b7a5a"
+        : "#163f48";
+
+
+    ctx.fill();
+
+
+    ctx.restore();
+
+
+    // Highlight border
+
+    ctx.beginPath();
+
+
+    ctx.arc(
+      target.x,
+      target.y,
+      radius - 2,
+      0,
+      Math.PI * 2
+    );
+
+
+    ctx.strokeStyle =
+      isStart
+        ? "#d6f1e6"
+        : "#ffcb3d";
+
+
+    ctx.lineWidth =
+      Math.max(
+        3,
+        target.W * 0.06
+      );
+
+
+    ctx.stroke();
+
+
+    // Text
+
+    ctx.fillStyle =
+      "#ffffff";
+
+
+    ctx.textAlign =
+      "center";
+
+
+    ctx.textBaseline =
+      "middle";
+
+
+    const fontSize =
+      Math.max(
+
+        9,
+
+        Math.min(
+          15,
+          target.W * 0.23
+        )
+
+      );
+
+
+    ctx.font =
+      `800 ${fontSize}px system-ui, sans-serif`;
+
+
+    const label =
+      target.label;
+
+
+    if (
+      label.includes(" / ")
+    ) {
+
+      const [
+        line1,
+        line2
+      ] =
+      label.split(" / ");
+
+
+      ctx.fillText(
+
+        line1,
+
+        target.x,
+
+        target.y -
+        fontSize * 0.55
+
+      );
+
+
+      ctx.fillText(
+
+        line2,
+
+        target.x,
+
+        target.y +
+        fontSize * 0.65
+
+      );
+
+    }
+
+    else if (
+      label.length >= 5 &&
+      target.W < 70
+    ) {
+
+      const split =
+        Math.ceil(
+          label.length / 2
+        );
+
+
+      ctx.fillText(
+
+        label.slice(
+          0,
+          split
+        ),
+
+        target.x,
+
+        target.y -
+        fontSize * 0.55
+
+      );
+
+
+      ctx.fillText(
+
+        label.slice(
+          split
+        ),
+
+        target.x,
+
+        target.y +
+        fontSize * 0.65
+
+      );
+
+    }
+
+    else {
+
+      ctx.fillText(
+        label,
+        target.x,
+        target.y
+      );
+
+    }
+
+  }
+
+
+  function renderCurrentScene() {
+
+    drawPosBackground();
+
+
+    if (
+      currentTarget
+    ) {
+
+      drawTarget(
+
+        currentTarget,
+
+        currentTrialIndex === -1
+
+      );
+
+    }
+
+  }
+
+
+  // ============================================================
+  // STARTING TARGET
+  // ============================================================
+
+  function showStartTarget() {
+
+    currentTrialIndex =
+      -1;
+
+
+    previousTarget =
+      null;
+
+
+    currentErrors =
+      0;
+
+
+    currentTarget = {
+      ...START_TARGET
+    };
+
+
+    trialStartTime =
+      null;
+
+
+    acceptingClicks =
+      true;
+
+
+    experimentRunning =
+      true;
+
+
+    nextActionText.textContent =
+      "請點擊：開始定位";
+
+
+    hintText.textContent =
+      "先建立第一個起點；此步驟不計時。";
+
+
+    trialNumberEl.textContent =
+      "0";
+
+
+    renderCurrentScene();
+
+  }
+
+
+  // ============================================================
+  // PRESENT ONE EXPERIMENTAL TRIAL
+  // ============================================================
+
+  function presentTrial(
+    index
+  ) {
+
+    currentTrialIndex =
+      index;
+
+
+    currentErrors =
+      0;
+
+
+    acceptingClicks =
+      false;
+
+
+    const condition =
+      conditions[index];
+
+
+    /*
+      Target position is computed from PREVIOUS TARGET CENTER.
+
+      A is therefore physically manipulated here.
+    */
+
+    const placement =
+      chooseTargetPosition(
+
+        previousTarget,
+
+        condition.A
+
+      );
+
+
+    currentTarget = {
+
+      x:
+        placement.x,
+
+      y:
+        placement.y,
+
+      W:
+        condition.W,
+
+      A:
+        condition.A,
+
+      ID:
+        condition.ID,
+
+      repetition:
+        condition.repetition,
+
+      label:
+        condition.action,
+
+      angle:
+        placement.angle
+
+    };
+
+
+    nextActionText.textContent =
+      `請點擊：${currentTarget.label}`;
+
+
+    hintText.textContent =
+      "只點擊發亮的圓形目標；誤點會記錄，但不重新計時。";
+
+
+    /*
+      This counter represents number of COMPLETED trials.
+
+      Therefore, when trial 1 first appears,
+      completed trials = 0.
+    */
+
+    trialNumberEl.textContent =
+      String(index);
+
+
+    renderCurrentScene();
+
+
+    /*
+      TIMING
+
+      Canvas drawing has been completed.
+
+      requestAnimationFrame executes immediately before the
+      browser paints the new frame.
+
+      The high-resolution timer therefore begins at the frame
+      in which the new target becomes visually available.
+
+      No pre-target delay is included.
+    */
+
+    requestAnimationFrame(
+      () => {
+
+        trialStartTime =
+          performance.now();
+
+
+        acceptingClicks =
+          true;
+
+      }
+    );
+
+  }
+
+
+  // ============================================================
+  // SUCCESSFUL TARGET SELECTION
+  // ============================================================
+
+  function handleSuccessfulSelection(
+    pointerX,
+    pointerY
+  ) {
+
+    // ----------------------------------------------------------
+    // Starting target
+    // ----------------------------------------------------------
+
+    if (
+      currentTrialIndex === -1
+    ) {
+
+      previousTarget = {
+
+        x:
+          currentTarget.x,
+
+        y:
+          currentTarget.y
+
+      };
+
+
+      presentTrial(0);
+
+
+      return;
+
+    }
+
+
+    // ----------------------------------------------------------
+    // Stop timer immediately when target is successfully pressed
+    // ----------------------------------------------------------
+
+    const endTime =
+      performance.now();
+
+
+    const condition =
+      conditions[
+        currentTrialIndex
+      ];
+
+
+    // Verify actual Euclidean distance
+
+    const actualA =
+      Math.hypot(
+
+        currentTarget.x -
+        previousTarget.x,
+
+        currentTarget.y -
+        previousTarget.y
+
+      );
+
+
+    const mt =
+      endTime -
+      trialStartTime;
+
+
+    // ----------------------------------------------------------
+    // Store trial
+    // ----------------------------------------------------------
+
+    results.push({
+
+      Participant_ID:
+        participantId,
+
+      Trial:
+        currentTrialIndex + 1,
+
+      Repetition_Block:
+        condition.repetition,
+
+      Target_Distance_A_px:
+        condition.A,
+
+      Actual_Distance_px:
+        actualA,
+
+      Target_Width_W_px:
+        condition.W,
+
+      Index_of_Difficulty_bits:
+        condition.ID,
+
+      Movement_Time_ms:
+        mt,
+
+      Errors:
+        currentErrors,
+
+      Target_Action:
+        condition.action,
+
+      Start_X_px:
+        previousTarget.x,
+
+      Start_Y_px:
+        previousTarget.y,
+
+      Target_X_px:
+        currentTarget.x,
+
+      Target_Y_px:
+        currentTarget.y,
+
+      Movement_Angle_deg:
+        (
+          currentTarget.angle *
+          180 /
+          Math.PI +
+          360
+        ) %
+        360,
+
+      Pointer_X_px:
+        pointerX,
+
+      Pointer_Y_px:
+        pointerY
+
+    });
+
+
+    /*
+      The clicked target now becomes the origin of the
+      next movement.
+    */
+
+    previousTarget = {
+
+      x:
+        currentTarget.x,
+
+      y:
+        currentTarget.y
+
+    };
+
+
+    trialNumberEl.textContent =
+      String(
+        currentTrialIndex + 1
+      );
+
+
+    const nextIndex =
+      currentTrialIndex + 1;
+
+
+    if (
+      nextIndex >=
+      conditions.length
+    ) {
+
+      finishExperiment();
+
+    }
+
+    else {
+
+      presentTrial(
+        nextIndex
+      );
+
+    }
+
+  }
+
+
+  // ============================================================
+  // POINTER INPUT
+  // ============================================================
+
+  function handleCanvasPointerDown(
+    event
+  ) {
+
+    if (
+      !experimentRunning ||
+      !acceptingClicks ||
+      !currentTarget
+    ) {
+
+      return;
+
+    }
+
+
+    const rect =
+      canvas.getBoundingClientRect();
+
+
+    const x =
+      (
+        event.clientX -
+        rect.left
+      ) *
+      (
+        canvas.width /
+        rect.width
+      );
+
+
+    const y =
+      (
+        event.clientY -
+        rect.top
+      ) *
+      (
+        canvas.height /
+        rect.height
+      );
+
+
+    /*
+      Circular hit-testing.
+
+      Because the target is a circle, W is its diameter and
+      remains the same effective width regardless of
+      movement direction.
+    */
+
+    const hitDistance =
+      Math.hypot(
+
+        x -
+        currentTarget.x,
+
+        y -
+        currentTarget.y
+
+      );
+
+
+    const isHit =
+      hitDistance <=
+      currentTarget.W / 2;
+
+
+    if (
+      isHit
+    ) {
+
+      /*
+        Disable additional events immediately.
+
+        This ensures one successful pointer event cannot
+        accidentally be counted twice.
+      */
+
+      acceptingClicks =
+        false;
+
+
+      handleSuccessfulSelection(
+        x,
+        y
+      );
+
+    }
+
+    else if (
+      currentTrialIndex >= 0
+    ) {
+
+      /*
+        A miss does not restart MT.
+
+        Participant must continue until the target is
+        successfully acquired.
+      */
+
+      currentErrors += 1;
+
+    }
+
+  }
+
+
+  // ============================================================
+  // STATISTICS
+  // ============================================================
+
+  function mean(
+    values
+  ) {
+
+    if (
+      !values.length
+    ) {
+
+      return NaN;
+
+    }
+
+
+    return (
+      values.reduce(
+        (
+          sum,
+          value
+        ) =>
+          sum + value,
+        0
+      ) /
+      values.length
+    );
+
+  }
+
+
+  /*
+    Simple least-squares regression:
+
+        MT = a + b(ID)
+
+    Included for the end-of-experiment summary.
+  */
+
+  function linearRegression(
+    xs,
+    ys
+  ) {
+
+    const n =
+      xs.length;
+
+
+    if (
+      n < 2
+    ) {
+
+      return {
+
+        intercept:
+          NaN,
+
+        slope:
+          NaN,
+
+        r2:
+          NaN
+
+      };
+
+    }
+
+
+    const xMean =
+      mean(xs);
+
+
+    const yMean =
+      mean(ys);
+
+
+    let sxx =
+      0;
+
+    let sxy =
+      0;
+
+    let syy =
+      0;
+
+
+    for (
+      let i = 0;
+      i < n;
+      i++
+    ) {
+
+      const dx =
+        xs[i] -
+        xMean;
+
+
+      const dy =
+        ys[i] -
+        yMean;
+
+
+      sxx +=
+        dx * dx;
+
+
+      sxy +=
+        dx * dy;
+
+
+      syy +=
+        dy * dy;
+
+    }
+
+
+    const slope =
+      sxx === 0
+        ? NaN
+        : sxy / sxx;
+
+
+    const intercept =
+      yMean -
+      slope *
+      xMean;
+
+
+    let sse =
+      0;
+
+
+    for (
+      let i = 0;
+      i < n;
+      i++
+    ) {
+
+      const predicted =
+        intercept +
+        slope *
+        xs[i];
+
+
+      const residual =
+        ys[i] -
+        predicted;
+
+
+      sse +=
+        residual *
+        residual;
+
+    }
+
+
+    const r2 =
+      syy === 0
+        ? NaN
+        : 1 -
+          sse /
+          syy;
+
+
+    return {
+
+      intercept,
+
+      slope,
+
+      r2
+
+    };
+
+  }
+
+
+  // ============================================================
+  // CONDITION-LEVEL SUMMARY
+  // ============================================================
+
+  function buildConditionSummary() {
+
+    const groups =
+      new Map();
+
+
+    for (
+      const row of results
+    ) {
+
+      const key =
+        `${row.Target_Distance_A_px}-${row.Target_Width_W_px}`;
+
+
+      if (
+        !groups.has(key)
+      ) {
+
+        groups.set(
+          key,
+          []
+        );
+
+      }
+
+
+      groups
+        .get(key)
+        .push(row);
+
+    }
+
+
+    const rows =
+      [];
+
+
+    for (
+      const A of DISTANCE_LEVELS
+    ) {
+
+      for (
+        const W of WIDTH_LEVELS
+      ) {
+
+        const key =
+          `${A}-${W}`;
+
+
+        const group =
+          groups.get(key) ||
+          [];
+
+
+        rows.push({
+
+          label:
+            `A${A}-W${W}`,
+
+          A,
+
+          W,
+
+          ID:
+            Math.log2(
+              A / W + 1
+            ),
+
+          meanMT:
+            mean(
+              group.map(
+                row =>
+                  row.Movement_Time_ms
+              )
+            ),
+
+          errors:
+            group.reduce(
+              (
+                sum,
+                row
+              ) =>
+                sum +
+                row.Errors,
+              0
+            )
+
+        });
+
+      }
+
+    }
+
+
+    return rows;
+
+  }
+
+
+  // ============================================================
+  // FINISH
+  // ============================================================
+
+  function finishExperiment() {
+
+    experimentRunning =
+      false;
+
+
+    acceptingClicks =
+      false;
+
+
+    currentTarget =
+      null;
+
+
+    experimentScreen.style.display =
+      "none";
+
+
+    summaryScreen.style.display =
+      "block";
+
+
+    const mtValues =
+      results.map(
+        row =>
+          row.Movement_Time_ms
+      );
+
+
+    const idValues =
+      results.map(
+        row =>
+          row.Index_of_Difficulty_bits
+      );
+
+
+    const totalErrors =
+      results.reduce(
+        (
+          sum,
+          row
+        ) =>
+          sum +
+          row.Errors,
+        0
+      );
+
+
+    const regression =
+      linearRegression(
+        idValues,
+        mtValues
+      );
+
+
+    document
+      .getElementById(
+        "metricTrials"
+      )
+      .textContent =
+      String(
+        results.length
+      );
+
+
+    document
+      .getElementById(
+        "metricMT"
+      )
+      .textContent =
+      `${mean(mtValues).toFixed(1)} ms`;
+
+
+    document
+      .getElementById(
+        "metricErrors"
+      )
+      .textContent =
+      String(
+        totalErrors
+      );
+
+
+    document
+      .getElementById(
+        "metricID"
+      )
+      .textContent =
+      `${mean(idValues).toFixed(3)} bits`;
+
+
+    document
+      .getElementById(
+        "summaryText"
+      )
+      .textContent =
+      `Participant: ${
+        participantId ||
+        "not specified"
+      }. All ${
+        results.length
+      } controlled trials were completed.`;
+
+
+    document
+      .getElementById(
+        "regressionFormula"
+      )
+      .textContent =
+      `Trial-level regression: MT = ${
+        regression.intercept.toFixed(2)
+      } + ${
+        regression.slope.toFixed(2)
+      } × ID   |   R² = ${
+        regression.r2.toFixed(3)
+      }`;
+
+
+    const tbody =
+      document.getElementById(
+        "conditionTableBody"
+      );
+
+
+    tbody.innerHTML =
+      "";
+
+
+    for (
+      const row of buildConditionSummary()
+    ) {
+
+      const tr =
+        document.createElement(
+          "tr"
+        );
+
+
+      tr.innerHTML =
+        `
+          <td>${row.label}</td>
+
+          <td>${row.A}</td>
+
+          <td>${row.W}</td>
+
+          <td>
+            ${row.ID.toFixed(3)}
+          </td>
+
+          <td>
+            ${row.meanMT.toFixed(1)}
+          </td>
+
+          <td>
+            ${row.errors}
+          </td>
+        `;
+
+
+      tbody.appendChild(
+        tr
+      );
+
+    }
+
+  }
+
+
+  // ============================================================
+  // CSV
+  // ============================================================
+
+  function csvEscape(
+    value
+  ) {
+
+    const stringValue =
+      String(
+        value ?? ""
+      );
+
+
+    if (
+      /[",\n]/.test(
+        stringValue
+      )
+    ) {
+
+      return (
+        '"' +
+        stringValue.replace(
+          /"/g,
+          '""'
+        ) +
+        '"'
+      );
+
+    }
+
+
+    return stringValue;
+
+  }
+
+
+  function downloadCsv() {
+
+    if (
+      !results.length
+    ) {
+
+      return;
+
+    }
+
+
+    const headers =
+      Object.keys(
+        results[0]
+      );
+
+
+    const lines = [
+
+      headers.join(",")
+
+    ];
+
+
+    for (
+      const row of results
+    ) {
+
+      lines.push(
+
+        headers
+          .map(
+            header => {
+
+              const value =
+                row[header];
+
+
+              if (
+                typeof value ===
+                "number"
+              ) {
+
+                if (
+                  header ===
+                  "Movement_Time_ms"
+                ) {
+
+                  return value.toFixed(
+                    3
+                  );
+
+                }
+
+
+                if (
+                  header ===
+                  "Index_of_Difficulty_bits"
+                ) {
+
+                  return value.toFixed(
+                    6
+                  );
+
+                }
+
+
+                if (
+                  header ===
+                  "Actual_Distance_px"
+                ) {
+
+                  return value.toFixed(
+                    6
+                  );
+
+                }
+
+
+                if (
+                  header.endsWith(
+                    "_px"
+                  )
+                ) {
+
+                  return value.toFixed(
+                    3
+                  );
+
+                }
+
+
+                if (
+                  header ===
+                  "Movement_Angle_deg"
+                ) {
+
+                  return value.toFixed(
+                    3
+                  );
+
+                }
+
+              }
+
+
+              return csvEscape(
+                value
+              );
+
+            }
+          )
+          .join(",")
+
+      );
+
+    }
+
+
+    /*
+      UTF-8 BOM helps Microsoft Excel correctly
+      display Traditional Chinese characters.
+    */
+
+    const blob =
+      new Blob(
+
+        [
+          "\uFEFF" +
+          lines.join(
+            "\r\n"
+          )
+        ],
+
+        {
+          type:
+            "text/csv;charset=utf-8;"
+        }
+
+      );
+
+
+    const url =
+      URL.createObjectURL(
+        blob
+      );
+
+
+    const link =
+      document.createElement(
+        "a"
+      );
+
+
+    const safeId =
+      (
+        participantId ||
+        "participant"
+      )
+      .replace(
+        /[^a-zA-Z0-9_-]+/g,
+        "_"
+      );
+
+
+    const timestamp =
+      new Date()
+        .toISOString()
+        .replace(
+          /[:.]/g,
+          "-"
+        );
+
+
+    link.href =
+      url;
+
+
+    link.download =
+      `fitts_pos_${safeId}_${timestamp}.csv`;
+
+
+    document.body.appendChild(
+      link
+    );
+
+
+    link.click();
+
+
+    link.remove();
+
+
+    URL.revokeObjectURL(
+      url
+    );
+
+  }
+
+
+  // ============================================================
+  // START / RESTART
+  // ============================================================
+
+  function startExperiment() {
+
+    participantId =
+      participantIdInput
+        .value
+        .trim();
+
+
+    conditions =
+      generateConditions();
+
+
+    results =
+      [];
+
+
+    trialTotalEl.textContent =
+      String(
+        conditions.length
+      );
+
+
+    instructionScreen.style.display =
+      "none";
+
+
+    summaryScreen.style.display =
+      "none";
+
+
+    experimentScreen.style.display =
+      "block";
+
+
+    showStartTarget();
+
+  }
+
+
+  function restartExperiment() {
+
+    summaryScreen.style.display =
+      "none";
+
+
+    experimentScreen.style.display =
+      "none";
+
+
+    instructionScreen.style.display =
+      "block";
+
+  }
+
+
+  // ============================================================
+  // EVENT LISTENERS
+  // ============================================================
+
+  startButton.addEventListener(
+    "click",
+    startExperiment
+  );
+
+
+  restartButton.addEventListener(
+    "click",
+    restartExperiment
+  );
+
+
+  downloadCsvButton.addEventListener(
+    "click",
+    downloadCsv
+  );
+
+
+  canvas.addEventListener(
+    "pointerdown",
+    handleCanvasPointerDown
+  );
+
+
+  // Initial canvas rendering
+
+  drawPosBackground();
+
+})();
+</script>
+
+</body>
+</html>
