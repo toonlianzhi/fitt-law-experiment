@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Supermarket POS Fitts' Law Experiment Report</title>
+<style>
+body{font-family:Arial,sans-serif;max-width:1000px;margin:40px auto;padding:0 24px;line-height:1.6;color:#17202a}
+h1{margin-bottom:6px}h2{margin-top:34px;border-bottom:1px solid #ddd;padding-bottom:6px}
+.card{background:#f7f9fa;border:1px solid #ddd;border-radius:10px;padding:18px;margin:16px 0}
+.formula{font-family:Georgia,serif;font-size:1.15rem;text-align:center;padding:12px}
+.video{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;margin-top:14px}
+.video iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:8px}
+table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:8px;text-align:left}
+</style></head>
+<body>
+<h1>Supermarket POS Fitts' Law Experiment</h1>
+<p>Fitts' Law experiment in a Taiwanese supermarket checkout context.</p>
+
+<h2>Scenario</h2>
+<p>This experiment simulates a supermarket checkout operation in which a cashier uses a POS interface while processing a customer's purchase. The task focuses on operating on-screen function buttons such as next step, membership/points, promotion, cancellation, credit card, electronic payment, and cash. The experiment examines how target size and target distance affect movement time.</p>
+
+<h2>Innovation</h2>
+<p>The experiment combines a realistic supermarket POS visual context with a controlled Fitts' Law manipulation. Target distance (A) and target width (W) are varied across 3 levels each, with 3 repetitions per A × W combination, producing 27 controlled trials. This preserves the real-world checkout context while keeping the pointing task experimentally measurable.</p>
+
+<h2>Application</h2>
+<p>The application is intended to support interface design for fast checkout operations. The real-world HCI problem is that frequently used POS controls need to be sized and placed so operators can reach them efficiently while maintaining reliable interaction. Movement-time data provide an empirical basis for evaluating target size and target distance in this context.</p>
+
+<h2>Why this design?</h2>
+<p>A supermarket checkout was chosen because cashiers repeatedly interact with digital controls under time pressure. The design keeps the core experimental task as a single pointing task rather than adding simultaneous scanning or conversation, so that the effects of target distance and target width can be measured more directly.</p>
+
+<h2>Participant Recording</h2>
+<p>The trial session was screen-recorded during data collection.</p>
+<div class="video"><iframe src="https://www.youtube.com/embed/qjdPLdvLnao" title="Fitts' Law experiment screen recording" allowfullscreen></iframe></div>
+
+<h2>Analysis</h2>
+<p>The formal dataset contains 27 trials. A least-squares linear regression was performed with Movement Time (MT) as the dependent variable and Index of Difficulty (ID) as the predictor.</p>
+<div class="card formula">MT = a + b × ID<br><br><strong>MT = 422.54 + 111.67 × ID</strong></div>
+
+<table>
+<tr><th>Statistic</th><th>Value</th></tr>
+<tr><td>a (intercept)</td><td>422.54 ms</td></tr>
+<tr><td>b (slope)</td><td>111.67 ms/bit</td></tr>
+<tr><td>R²</td><td>0.393</td></tr>
+<tr><td>Trials (n)</td><td>27</td></tr>
+</table>
+
+<h3>Academic-quality scatter plot</h3>
+<img src="fitts_law_scatter_final.png" alt="Movement Time versus Index of Difficulty scatter plot with regression line">
+<p><a href="fitts_law_scatter_final.pdf">Download the PDF figure</a></p>
+
+<h2>Custom Formula</h2>
+<p class="formula"><strong>MT = 422.54 + 111.67 × ID</strong></p>
+<p>The empirically derived parameters are <strong>a = 422.54 ms</strong> and <strong>b = 111.67 ms/bit</strong>.</p>
+</body></html>
